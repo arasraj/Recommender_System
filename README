@@ -1,3 +1,6 @@
-This is a collaborative filtering item-based recommender system.  The item-item similarity matrix
-is computed using Adjusted Cosine similarity.  Most data structures are serialized to disk and
-loaded into memory when needed.  This is to avoid repeating computationaly heavy tasks.  
+This is a collaborative filtering item-based recommender system.  User ratings are on a 5-star
+scale.  The item-item similarity matrix is computed using Adjusted Cosine similarity.  Most 
+data structures are serialized to disk and loaded into memory when needed.  This is to avoid 
+repeating computationaly heavy tasks. This code can be extended to recommend books on a per 
+user basis pretty easily.  It can also be extending to provide predictions on what a user
+would rate a specific book using a weighted knn approach.

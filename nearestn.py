@@ -1,7 +1,7 @@
-import string
-import numpy
+import db
 import sys
-
+import numpy
+import string
 from persist import *
 from collections import defaultdict
 from scipy import sparse
@@ -10,7 +10,7 @@ from numpy.linalg import norm
 
 class NearestNeighbors:
 
-  def __init__(self, data):
+  def __init__(self):
     pass
 
   def index(self, data):
@@ -88,7 +88,7 @@ class NearestNeighbors:
     for i in xrange(indexlen):
 
       for j in xrange(i+1, indexlen):
-        intersection_userid = []
+        intersections_userid = []
         num_iters = 0
 
         # only calculate similarity if there are enough users who have 
@@ -109,8 +109,8 @@ class NearestNeighbors:
           cos_sim = numpy.dot(vec1, vec2) / (norm(vec1) * norm(vec2))
 
           # similarities are symmetric so store both
-          knn[i].append((j,cos_sim, iters))
-          knn[j].append(i, cos_sim, iters))
+          knn[i].append((j,cos_sim, num_iters))
+          knn[j].append((i, cos_sim, num_iters))
       print i
     totalbooks = i
     serialize_obj(dict(knn), 'knn_dict.pkl')
@@ -132,7 +132,45 @@ class NearestNeighbors:
       account of differences in user rating tendencies).
     """
 
-    return [ratings_dict[intersect] - avgrating[intersect]for intersect in intersection_bookids]
+    return [ratings_dict[intersect] - float(avgrating[intersect]) for intersect in intersection_bookids]
+
+  def recommend(self, knn):
+    """
+      Creates and html page displaying recommendations books.  The books that 
+      are aligned left (A) are the "given" books while those books underneath 
+      A and indented are recommended based on A. This is showing the knn data 
+      structure. This can easily be adapted to recommend a book given that a user
+      likes another book.
+    """
+
+    db_instance = db.DB()
+    knn = load_obj('knn_dict.pkl')
+    indextobook = load_obj('indextobook.pkl')
+
+    html = ['<html><body><table>']
+    for book1, ratings in knn.items():
+      tmp = []
+      for book2, sim, iters in ratings:
+        # Set a threshold for what are considered "similar enough books". This is highly
+        # dependent on the data.
+        if sim > 0.20:
+          title, desc, author, image, salesrank = db_instance.getbookattrs(indextobook[book2])
+          tmp.append('<tr><td width="150px"></td><td><img src="http://ecx.images-amazon.com/images/I/%s" \
+                      width="75"><br>Title: %s<br>Description: %s<br>Authors: %s<br>SalesRank: %s<br>Adj \
+                      Cosine Sim: %f</td><td>Intersection: %d</td></tr>' % 
+                      (image, title, desc, author, salesrank, sim, iters))
+      if tmp:
+        title, desc, author, image, salesrank = db_instance.getbookattrs(indextobook[book1])
+        html.append('<tr><td colspan=2><img src="http://ecx.images-amazon.com/images/I/%s" width="75px"> \
+                    <br>Title: %s<br>Desc: %s<br>Authors: %s<br>SalesRank: %s</td></tr>' % 
+                    (image, title, desc, author, salesrank))
+        html.extend(tmp)
+    html.append('</table></body></html>')
+
+    # write html page to disk
+    f = open('bookrec.html', 'w')
+    f.write('\n'.join(html))
+    f.close()
 
 
 def cosine_sim(vec1, vec2):

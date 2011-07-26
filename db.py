@@ -1,6 +1,7 @@
 import string
 import MySQLdb as mysqldb
 from config import *
+from persist import *
 
 class DB:
   """
@@ -11,7 +12,7 @@ class DB:
   def __init__(self):
     # create both local and remote (DB server)
     self.remote_conn = mysqldb.connect(host=REMOTE_HOST, user=REMOTE_USER, passwd=REMOTE_PASSWD, db=REMOTE_DB)
-    self.local_conn = mysqldb.connect(host=HOST, user=USER, passwd=PASSWD, db=DB)
+    self.local_conn = mysqldb.connect(host=HOST, user=USER, passwd=PASSWD, db=LOCAL_DB)
 
   def get_remote_books(self):
     """ Get all books from remote db server. """
@@ -83,11 +84,11 @@ class DB:
     i=0
     errors = []
     for item in items:
-    	# quick hack to handle titles/descriptions with double quotes in them.
+      # quick hack to handle titles/descriptions with double quotes in them.
       # (screws with python string formating).
-    	item1 = string.replace(item[1], '"', '\\"') if item[1] else ''
-    	item2 = string.replace(item[2], '"', '\\"') if item[2] else ''
-    	item3 = string.replace(item[3], '"', '\\"') if item[3] else ''
+      item1 = string.replace(item[1], '"', '\\"') if item[1] else ''
+      item2 = string.replace(item[2], '"', '\\"') if item[2] else ''
+      item3 = string.replace(item[3], '"', '\\"') if item[3] else ''
 
       #if item[1]: item1 = string.replace(item[1], '"', '\\"')
       #else: item1 = ''
@@ -128,9 +129,9 @@ class DB:
     users = [user[0] for user in result]
     # create index numbers starting from 0
     indextouser = list(enumerate(users))
-    self.serialize(dict(indextouser), 'indextouser.pkl')
+    serialize_obj(dict(indextouser), 'indextouser.pkl')
     usertoindex = dict([(b,a) for a,b in indextouser])
-    self.serialize(usertoindex, 'usertoindex.pkl')
+    serialize_obj(usertoindex, 'usertoindex.pkl')
     print len(usertoindex)
 
   def itemset(self):
@@ -144,10 +145,16 @@ class DB:
     items = [item[0] for item in result]
     items.sort()
     indextobook = list(enumerate(items))
-    self.serialize(dict(indextobook), 'indextobook.pkl')
+    serialize_obj(dict(indextobook), 'indextobook.pkl')
     booktoindex = dict([(b,a) for a,b in indextobook])
-    self.serialize(booktoindex, 'booktoindex.pkl')
+    serialize_obj(booktoindex, 'booktoindex.pkl')
 
+  def getbookattrs(self, bookid):
+    c = self.local_conn.cursor()
+    c.execute(""" select title, description, authors, image, salesrank from books where books.id=%d; """ % bookid)
+    attrs = c.fetchone()
+    c.close()
+    return attrs
 
   def get_titles(self):
     c = self.local_conn.cursor()

@@ -162,6 +162,8 @@ class NearestNeighbors:
 
   def test_recommend(self, bookset, knn):
     """
+      There is a lot of duplication between here and recommend().  This method was
+      added for testing purposes only.
     """
 
     bookset = load_obj('test_bookset.pkl')

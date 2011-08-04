@@ -1,7 +1,10 @@
 import string
 import MySQLdb as mysqldb
-from config import *
 from persist import *
+try:
+  from config import *
+except:
+  pass
 
 class DB:
   """

@@ -10,6 +10,6 @@ To test:
 
 > python generate.py test
 
-NOTE: test_bookset.pkl, test_ratings.pkl, indextobook.pkl, booktoindex.pkl, usertoindex.pkl must be in the same working directory inorder for test() to work.
+NOTE: test_bookset.pkl, test_ratings.pkl, indextobook.pkl, booktoindex.pkl, usertoindex.pkl must be in the same working directory inorder for test() to work. All "pickled" objects are provided for testing only. If you have access to the correct mysql dataset these object are generated for you.
 
 The visualization of item similarities is shown in bookrec.html.

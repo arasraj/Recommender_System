@@ -30,7 +30,7 @@ class NearestNeighbors:
     idx_dict = defaultdict(dict)
 
     for rating in data:
-      userid, bookid, user_rating = rating[:3]
+      userid, bookid, user_rating = rating[1:]
 
       # get book/user index from their id
       bookindex = booktoindex[bookid]
@@ -40,8 +40,8 @@ class NearestNeighbors:
       userratings[userindex].append(user_rating)
 
     # turn the index into a list for easier processing when computing item similarities
-    idx_list = (idx_dict[i] for i, _ in enumerate(idx_dict))
-    serialize_obj(idx_list, 'index.pkl')
+    idx_list = [idx_dict[i] for i, _ in enumerate(idx_dict)]
+    #serialize_obj(idx_list, 'index.pkl')
 
     # find user average rating
     avg = lambda l: float(sum(l)) / len(l)
@@ -49,7 +49,7 @@ class NearestNeighbors:
       (index, avg(ratings))
       for index, ratings in userratings.iteritems())
 
-    serialize_obj(avgrating, 'avgrating.pkl')
+    #serialize_obj(avgrating, 'avgrating.pkl')
     return (idx_list, avgrating)
     #print len(idx_list)
 
@@ -92,34 +92,24 @@ class NearestNeighbors:
         # greatly impacts the efficiency of this loop.
         # Also store userids that are found to satisfy this condition inorder
         # to avoid operations on vectors of enormous size.
-        #for user in index[i].iterkeys():
-        #  if user in index[j]:
-        #    intersections_userid.append(user)
-        #    num_iters += 1
 
-        #if num_iters >= 3:
-        #  vec1 = self.create_vector(index[i], avgrating, intersections_userid) 
-        #  vec2 = self.create_vector(index[j], avgrating, intersections_userid)
-
-        intersection = set(outer.iterkeys()).intersect(inner.iterkeys())
+        intersection = set(outer.iterkeys()).intersection(inner.iterkeys())
         intersections_userid = list(intersection)
-        if len() >= 2:
+        if len(intersections_userid) >= 4:
           vec1 = self.create_vector(outer, avgrating, intersections_userid)
           vec2 = self.create_vector(inner, avgrating, intersections_userid)
           # calculate adjusted cosine sim
           cos_sim = numpy.dot(vec1, vec2) / (norm(vec1) * norm(vec2))
 
           # similarities are symmetric so store both
-          knn[i].append((j, cos_sim, num_iters))
-          knn[j].append((i, cos_sim, num_iters))
+          knn[i].append((j, cos_sim, len(intersections_userid)))
+          knn[j].append((i, cos_sim, len(intersections_userid)))
       print i
-    serialize_obj(dict(knn), 'knn_dict.pkl')
+    #serialize_obj(dict(knn), 'knn_dict.pkl')
 
     for k,v in knn.iteritems():
       print k,v
 
-    print len(knn.iteritems())
-    print len(knn)
     print i
     return knn
 

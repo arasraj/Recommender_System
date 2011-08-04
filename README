@@ -4,3 +4,12 @@ data structures are serialized to disk and loaded into memory when needed.  This
 repeating computationaly heavy tasks. This code can be extended to recommend books on a per 
 user basis pretty easily.  It can also be extending to provide predictions on what a user
 would rate a specific book using a weighted knn approach.
+
+
+To test:
+
+> python generate.py test
+
+NOTE: test_bookset.pkl, test_ratings.pkl, indextobook.pkl, booktoindex.pkl, usertoindex.pkl must be in the same working directory inorder for test() to work.
+
+The visualization of item similarities is shown in bookrec.html.

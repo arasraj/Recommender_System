@@ -22,11 +22,11 @@ def test():
   nn.test_recommend(bookset, knn)
 
 if __name__ == '__main__':
+
   try:
-    if sys.argv[1] == 'test':
-      test()
-      print 'o hai'
+    dotest = sys.argv[1]
   except:
-    #main()
-    pass
-    print 'hai'
+    dotest = None
+
+  if dotest: test()
+  else: main()

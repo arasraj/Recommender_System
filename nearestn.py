@@ -10,15 +10,12 @@ from numpy.linalg import norm
 
 class NearestNeighbors:
 
-  def __init__(self):
-    pass
-
   def index(self, data):
-    """ 
+    """
       Creates index of books to userid-rating. The average rating for an
       individual user is also calculated for later processing during the
-      computation of item-item similarity.  This is to account for the 
-      different rating scales users are likely to have.  
+      computation of item-item similarity.  This is to account for the
+      different rating scales users are likely to have.
 
       data: tuple of (userid, bookid, rating) obtained from db
     """
@@ -28,14 +25,12 @@ class NearestNeighbors:
     usertoindex = load_obj('usertoindex.pkl')
 
     # used to calculate the average user rating
-    userratings = defaultdict(lambda: list())
-    # main index 
-    idx_dict = defaultdict(lambda: dict())
+    userratings = defaultdict(list)
+    # main index
+    idx_dict = defaultdict(dict)
 
     for rating in data:
-      userid = rating[1]
-      bookid = rating[2]
-      user_rating = rating[3]
+      userid, bookid, user_rating = rating[:3]
 
       # get book/user index from their id
       bookindex = booktoindex[bookid]
@@ -45,24 +40,23 @@ class NearestNeighbors:
       userratings[userindex].append(user_rating)
 
     # turn the index into a list for easier processing when computing item similarities
-    idx_list = [idx_dict[i] for i in xrange(len(idx_dict))]
+    idx_list = (idx_dict[i] for i, _ in enumerate(idx_dict))
     serialize_obj(idx_list, 'index.pkl')
 
     # find user average rating
-    avgrating = {}
-    for index, ratings in userratings.items():
-      avg = float(sum(ratings)) / len(ratings)
-      avgrating[index] = avg
+    avg = lambda l: float(sum(l)) / len(l)
+    avgrating = dict(i
+      (index, avg(ratings))
+      for index, ratings in userratings.iteritems()
 
     serialize_obj(avgrating, 'avgrating.pkl')
-    #print len(idx_list)
 
 
   def sim_matrix(self):
     """
       Stores a item-item similarity "matrix" to disk.  This matrix is actually
       a dictionary of bookids -> similarbookid, similarity score.  This representation
-      of similarities is more space efficient than a matrix due to the sparse nature of the 
+      of similarities is more space efficient than a matrix due to the sparse nature of the
       data.
 
       Adjusted Cosine similarity is used to compute item-item similarities.  This is useful because
@@ -70,7 +64,7 @@ class NearestNeighbors:
     """
 
     index = load_obj('index.pkl')
-    books = load_obj('indextobook.pkl') 
+    books = load_obj('indextobook.pkl')
     bookstoindex = load_obj('booktoindex.pkl')
     usersindex = load_obj('usertoindex.pkl')
     avgrating = load_obj('avgrating.pkl')
@@ -91,7 +85,7 @@ class NearestNeighbors:
         intersections_userid = []
         num_iters = 0
 
-        # only calculate similarity if there are enough users who have 
+        # only calculate similarity if there are enough users who have
         # co-rated the same books.  Here the threshold is set at 2, but
         # should be increased as the sample size increases. This optimization
         # greatly impacts the efficiency of this loop.
@@ -103,7 +97,7 @@ class NearestNeighbors:
             num_iters += 1
 
         if num_iters >= 2:
-          vec1 = self.create_vector(index[i], avgrating, intersections_userid) 
+          vec1 = self.create_vector(index[i], avgrating, intersections_userid)
           vec2 = self.create_vector(index[j], avgrating, intersections_userid)
           # calculate adjusted cosine sim
           cos_sim = numpy.dot(vec1, vec2) / (norm(vec1) * norm(vec2))
@@ -136,9 +130,9 @@ class NearestNeighbors:
 
   def recommend(self, knn):
     """
-      Creates and html page displaying recommendations books.  The books that 
-      are aligned left (A) are the "given" books while those books underneath 
-      A and indented are recommended based on A. This is showing the knn data 
+      Creates and html page displaying recommendations books.  The books that
+      are aligned left (A) are the "given" books while those books underneath
+      A and indented are recommended based on A. This is showing the knn data
       structure. This can easily be adapted to recommend a book given that a user
       likes another book.
     """
@@ -157,12 +151,12 @@ class NearestNeighbors:
           title, desc, author, image, salesrank = db_instance.getbookattrs(indextobook[book2])
           tmp.append('<tr><td width="150px"></td><td><img src="http://ecx.images-amazon.com/images/I/%s" \
                       width="75"><br>Title: %s<br>Description: %s<br>Authors: %s<br>SalesRank: %s<br>Adj \
-                      Cosine Sim: %f</td><td>Intersection: %d</td></tr>' % 
+                      Cosine Sim: %f</td><td>Intersection: %d</td></tr>' %
                       (image, title, desc, author, salesrank, sim, iters))
       if tmp:
         title, desc, author, image, salesrank = db_instance.getbookattrs(indextobook[book1])
         html.append('<tr><td colspan=2><img src="http://ecx.images-amazon.com/images/I/%s" width="75px"> \
-                    <br>Title: %s<br>Desc: %s<br>Authors: %s<br>SalesRank: %s</td></tr>' % 
+                    <br>Title: %s<br>Desc: %s<br>Authors: %s<br>SalesRank: %s</td></tr>' %
                     (image, title, desc, author, salesrank))
         html.extend(tmp)
     html.append('</table></body></html>')

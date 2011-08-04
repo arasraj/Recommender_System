@@ -113,7 +113,23 @@ class DB:
     c = self.local_conn.cursor()
     c.execute(""" select id, userid, bookid, rating from ratings; """)
     #return c.fetchmany(10)
-    return c.fetchall()
+    results =  c.fetchall()
+    # used for testing
+    serialize_obj(results, 'test_ratings.pkl')
+    return results
+
+  def get_test_books(self):
+    """ Get sample set of books for testing """
+
+    c = self.local_conn.cursor()
+    c.execute(""" select * from books where id in (select distinct bookid from ratings); """)
+    results =  c.fetchall()
+    # used for testing
+    bookset = {}
+    for id, title, desc, authors, image, salesrank, _ , _ in results:
+    	bookset[id] = (title, desc, authors, image, salesrank)
+
+    serialize_obj(bookset, 'test_bookset.pkl')
 
   def userset(self):
     """ 

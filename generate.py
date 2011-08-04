@@ -1,5 +1,7 @@
 import nearestn
 import db
+import sys 
+from persist import *
 
 def main():
   nn = nearestn.NearestNeighbors()
@@ -11,5 +13,20 @@ def main():
   nn.sim_matrix()
   nn.recommend(None)
 
+def test():
+  nn = nearestn.NearestNeighbors()
+  bookset = load_obj('test_bookset.pkl')
+  ratings = load_obj('test_ratings.pkl')
+  index, avgrating = nn.index(ratings)
+  knn = nn.sim_matrix(index, avgrating)
+  nn.test_recommend(bookset, knn)
+
 if __name__ == '__main__':
-	main()
+  try:
+    if sys.argv[1] == 'test':
+      test()
+      print 'o hai'
+  except:
+    #main()
+    pass
+    print 'hai'

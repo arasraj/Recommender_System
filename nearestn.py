@@ -55,10 +55,11 @@ class NearestNeighbors:
       avgrating[index] = avg
 
     serialize_obj(avgrating, 'avgrating.pkl')
+    return (idx_list, avgrating)
     #print len(idx_list)
 
 
-  def sim_matrix(self):
+  def sim_matrix(self, index, avgrating):
     """
       Stores a item-item similarity "matrix" to disk.  This matrix is actually
       a dictionary of bookids -> similarbookid, similarity score.  This representation
@@ -69,11 +70,11 @@ class NearestNeighbors:
       this approach accounts for differences in user rating scales.
     """
 
-    index = load_obj('index.pkl')
+    #index = load_obj('index.pkl')
     books = load_obj('indextobook.pkl') 
     bookstoindex = load_obj('booktoindex.pkl')
     usersindex = load_obj('usertoindex.pkl')
-    avgrating = load_obj('avgrating.pkl')
+    #avgrating = load_obj('avgrating.pkl')
 
     indexlen = len(index)
     usersetlen = len(usersindex)
@@ -102,7 +103,7 @@ class NearestNeighbors:
             intersections_userid.append(user)
             num_iters += 1
 
-        if num_iters >= 2:
+        if num_iters >= 3:
           vec1 = self.create_vector(index[i], avgrating, intersections_userid) 
           vec2 = self.create_vector(index[j], avgrating, intersections_userid)
           # calculate adjusted cosine sim
@@ -122,6 +123,7 @@ class NearestNeighbors:
     print i
     print len(knn)
     print totalbooks
+    return knn
 
 
   def create_vector(self, ratings_dict, avgrating, intersection_bookids):
@@ -144,7 +146,7 @@ class NearestNeighbors:
     """
 
     db_instance = db.DB()
-    knn = load_obj('knn_dict.pkl')
+    #knn = load_obj('knn_dict.pkl')
     indextobook = load_obj('indextobook.pkl')
 
     html = ['<html><body><table>']
@@ -172,6 +174,39 @@ class NearestNeighbors:
     f.write('\n'.join(html))
     f.close()
 
+  def test_recommend(self, bookset, knn):
+    """
+    """
+
+    bookset = load_obj('test_bookset.pkl')
+    #db_instance = db.DB()
+    #knn = load_obj('knn_dict.pkl')
+    indextobook = load_obj('indextobook.pkl')
+
+    html = ['<html><body><table>']
+    for book1, ratings in knn.items():
+      tmp = []
+      for book2, sim, iters in ratings:
+        # Set a threshold for what are considered "similar enough books". This is highly
+        # dependent on the data.
+        if sim > 0.20:
+          title, desc, author, image, salesrank = bookset[indextobook[book2]]
+          tmp.append('<tr><td width="150px"></td><td><img src="http://ecx.images-amazon.com/images/I/%s" \
+                      width="75"><br>Title: %s<br>Description: %s<br>Authors: %s<br>SalesRank: %s<br>Adj \
+                      Cosine Sim: %f</td><td>Intersection: %d</td></tr>' % 
+                      (image, title, desc, author, salesrank, sim, iters))
+      if tmp:
+        title, desc, author, image, salesrank = bookset[indextobook[book1]]
+        html.append('<tr><td colspan=2><img src="http://ecx.images-amazon.com/images/I/%s" width="75px"> \
+                    <br>Title: %s<br>Desc: %s<br>Authors: %s<br>SalesRank: %s</td></tr>' % 
+                    (image, title, desc, author, salesrank))
+        html.extend(tmp)
+    html.append('</table></body></html>')
+
+    # write html page to disk
+    f = open('bookrec.html', 'w')
+    f.write('\n'.join(html))
+    f.close()
 
 def cosine_sim(vec1, vec2):
   """
